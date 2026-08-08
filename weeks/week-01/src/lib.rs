@@ -47,7 +47,7 @@ pub fn genesis_hash() -> &'static str {
     // Steps:
     // 1. Return the `GENESIS_HASH` constant.
     // 2. Do not allocate a new string.
-    GENESIS_HASH
+    GENESIS_HASH //this is will be save in the progrqam binary and will be available for the entire lifetime of the program, so it is safe to return a reference to it
 }
 
 /// Return the hardcoded Unix timestamp for the Bitcoin genesis block.
