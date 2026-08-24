@@ -169,7 +169,11 @@ pub fn filter_by_sender(transactions: &[MockTransaction], sender: &str) -> Vec<M
     // 2. Walk through the input slice in order.
     // 3. Clone and push transactions whose `sender` equals the requested sender.
     // 4. Return the new vector.
-    transactions.iter().filter(|t| t.sender == sender).cloned().collect()
+    transactions
+        .iter()
+        .filter(|t| t.sender == sender)
+        .cloned()
+        .collect()
 }
 
 /// Return cloned transactions whose recipient exactly matches `recipient`.
@@ -184,7 +188,11 @@ pub fn filter_by_recipient(
     // 2. Walk through the input slice in order.
     // 3. Clone and push transactions whose `recipient` equals the requested recipient.
     // 4. Return the new vector.
-    transactions.iter().filter(|t| t.recipient == recipient).cloned().collect()
+    transactions
+        .iter()
+        .filter(|t| t.recipient == recipient)
+        .cloned()
+        .collect()
 }
 
 /// Return cloned transactions that are confirmed.
@@ -195,7 +203,11 @@ pub fn filter_confirmed(transactions: &[MockTransaction]) -> Vec<MockTransaction
     // 1. Create a new vector.
     // 2. Add cloned transactions only when `confirmed` is true.
     // 3. Keep the same order as the input slice.
-    let vector = transactions.iter().filter(|t| t.confirmed).cloned().collect();
+    let vector = transactions
+        .iter()
+        .filter(|t| t.confirmed)
+        .cloned()
+        .collect();
     vector
 }
 
@@ -228,7 +240,11 @@ pub fn amounts_over(transactions: &[MockTransaction], minimum_sats: u64) -> Vec<
     // 2. For each transaction, compare `amount_sats` with `minimum_sats`.
     // 3. Push only amounts strictly greater than the minimum.
     // 4. Do not include amounts equal to the minimum.
-    let list = transactions.iter().filter(|t| t.amount_sats > minimum_sats).map(|t| t.amount_sats).collect();
+    let list = transactions
+        .iter()
+        .filter(|t| t.amount_sats > minimum_sats)
+        .map(|t| t.amount_sats)
+        .collect();
     list
 }
 
@@ -244,7 +260,7 @@ pub fn build_balances(transactions: &[MockTransaction]) -> HashMap<String, i64> 
     // 5. Convert amounts to `i64` before applying negative changes.
     let mut balances: HashMap<String, i64> = HashMap::new();
     for transaction in transactions.iter().filter(|t| t.confirmed) {
-        let sender_balance = balances.entry(transaction.sender.clone()).or_insert(0); 
+        let sender_balance = balances.entry(transaction.sender.clone()).or_insert(0);
         // using entry here is used to get the balance of the sender, if it doesn't exist, it will insert 0 and return a mutable reference to it
         *sender_balance -= transaction.amount_sats as i64; //* is used here to get the actual value becuase balances.entry return a mutable reference */
         let recipient_balance = balances.entry(transaction.recipient.clone()).or_insert(0);
@@ -259,7 +275,9 @@ pub fn address_received_total(transactions: &[MockTransaction], address: &str) -
     // 1. Look only at confirmed transactions.
     // 2. Add `amount_sats` when `recipient == address`.
     // 3. Return 0 if there are no matches.
-    let confirmed_transactions = transactions.iter().filter(|t| t.confirmed && t.recipient == address);
+    let confirmed_transactions = transactions
+        .iter()
+        .filter(|t| t.confirmed && t.recipient == address);
     confirmed_transactions.map(|t| t.amount_sats).sum()
 }
 
@@ -269,7 +287,9 @@ pub fn address_sent_total(transactions: &[MockTransaction], address: &str) -> u6
     // 1. Look only at confirmed transactions.
     // 2. Add `amount_sats` when `sender == address`.
     // 3. Return 0 if there are no matches.
-    let confirmed_transactions = transactions.iter().filter(|t| t.confirmed && t.sender == address);
+    let confirmed_transactions = transactions
+        .iter()
+        .filter(|t| t.confirmed && t.sender == address);
     confirmed_transactions.map(|t| t.amount_sats).sum()
 }
 
