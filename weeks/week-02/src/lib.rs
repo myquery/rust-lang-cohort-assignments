@@ -67,7 +67,7 @@ pub fn fee_rate(fee_sats: u64, vbytes: u64) -> Option<u64> {
         return None;
     }
     // 2. Otherwise divide `fee_sats` by `vbytes`, rounding up.
-    let rate = (fee_sats + vbytes - 1) / vbytes; // This formula ensures rounding up by adding vbytes - 1 before performing integer division.
+    let rate = fee_sats.div_ceil(vbytes); // This formula ensures rounding up by adding vbytes - 1 before performing integer division.
                                                  // 3. Return the result in `Some(...)`.
                                                  // 4. Example: 251 sats over 100 vbytes should return 3.
     Some(rate)
@@ -151,10 +151,7 @@ pub fn parse_sats(input: &str) -> Option<u64> {
     // 3. Try to parse the trimmed string as `u64`.
     // 4. Return `Some(value)` on success, `None` on parse failure.
     //trimed.parse().ok() would have been a more concise way to do this, but I wanted to be explicit about the error handling.
-    match trimed.parse::<u64>() {
-        Ok(value) => Some(value),
-        Err(_) => None,
-    }
+    trimed.parse::<u64>().ok()
 }
 
 /// Split `input` once on the first colon and trim both sides.
