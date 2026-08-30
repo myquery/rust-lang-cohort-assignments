@@ -113,7 +113,7 @@ pub fn format_sats(sats: u64) -> String {
     // 4. Example: 1 sat becomes "0.00000001 BTC".
     let whole = sats / SATS_PER_BTC;
     let fraction = sats % SATS_PER_BTC;
-    format!("{}.{} BTC", whole, format!("{:0>8}", fraction))
+    format!("{}.{:0>8} BTC", whole, fraction)
 }
 
 /// Count transactions where `confirmed` is true.

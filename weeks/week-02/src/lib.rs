@@ -127,14 +127,7 @@ pub fn last_word(input: &str) -> &str {
 pub fn trim_prefix<'a>(input: &'a str, prefix: &str) -> &'a str {
     // Steps:
     // 1. Check whether `input` starts with `prefix`.
-    if input.starts_with(prefix) {
-        // 2. If it does, return the part of `input` after the prefix.
-        // An empty prefix should return `input` unchanged.
-        &input[prefix.len()..]
-    } else {
-        // 3. If it does not, return `input` unchanged.
-        input
-    }
+    input.strip_prefix(prefix).unwrap_or(input)
 }
 
 /// Parse a trimmed unsigned satoshi amount.

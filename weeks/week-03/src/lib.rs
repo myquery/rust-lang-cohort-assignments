@@ -109,11 +109,7 @@ impl TxOutput {
     pub fn is_unspent(&self) -> bool {
         // Steps:
         // 1. Compare `self.status` with `TxStatus::Unspent`.
-        if self.status == TxStatus::Unspent {
-            true
-        } else {
-            false
-        }
+        self.status == TxStatus::Unspent
         // 2. Return the boolean result.
     }
 }
@@ -338,9 +334,7 @@ impl Block {
             return Err(ValidationError::DuplicateTxId);
         }
         for tx in &self.transactions {
-            if let Err(e) = tx.validate() {
-                return Err(e);
-            }
+            tx.validate()?;
         }
         Ok(())
     }
