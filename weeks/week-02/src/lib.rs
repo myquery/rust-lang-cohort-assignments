@@ -68,8 +68,8 @@ pub fn fee_rate(fee_sats: u64, vbytes: u64) -> Option<u64> {
     }
     // 2. Otherwise divide `fee_sats` by `vbytes`, rounding up.
     let rate = fee_sats.div_ceil(vbytes); // This formula ensures rounding up by adding vbytes - 1 before performing integer division.
-                                                 // 3. Return the result in `Some(...)`.
-                                                 // 4. Example: 251 sats over 100 vbytes should return 3.
+                                          // 3. Return the result in `Some(...)`.
+                                          // 4. Example: 251 sats over 100 vbytes should return 3.
     Some(rate)
 }
 
