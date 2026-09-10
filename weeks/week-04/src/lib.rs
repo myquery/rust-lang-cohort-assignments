@@ -58,7 +58,7 @@ pub struct Block {
     pub network: Network,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct AmountSummary {
     pub output_count: usize,
     pub total_sats: u64,
@@ -113,7 +113,7 @@ impl From<std::io::Error> for BtcLibError {
         // Steps:
         // 1. Convert the IO error to a string.
         // 2. Store that string inside `BtcLibError::Io`.
-        todo!()
+        BtcLibError::Io(error.to_string())
     }
 }
 
@@ -124,7 +124,10 @@ impl TxInput {
         // 1. Convert `previous_txid` into an owned `String`.
         // 2. Store `previous_vout` unchanged.
         // 3. Return a `TxInput`.
-        todo!()
+        Self {
+            previous_txid: previous_txid.to_string(),
+            previous_vout,
+        }
     }
 }
 
@@ -137,7 +140,12 @@ impl TxOutput {
         // 3. Convert `recipient` into an owned `String`.
         // 4. Store `status` unchanged.
         // 5. Return a `TxOutput`.
-        todo!()
+        Self {
+            value_sats,
+            unique_id: Uuid::new_v4(),
+            recipient: recipient.to_string(),
+            status,
+        }
     }
 
     /// Return true when this output status is `TxStatus::Unspent`.
@@ -145,7 +153,7 @@ impl TxOutput {
         // Steps:
         // 1. Compare `self.status` with `TxStatus::Unspent`.
         // 2. Return the boolean result.
-        todo!()
+        self.status == TxStatus::Unspent
     }
 }
 
@@ -155,7 +163,11 @@ impl Validate for TxOutput {
         // Steps:
         // 1. If `value_sats` is 0, return `Err(BtcLibError::ZeroValueOutput)`.
         // 2. Otherwise return `Ok(())`.
-        todo!()
+        if self.value_sats == 0 {
+            Err(BtcLibError::ZeroValueOutput)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -166,7 +178,11 @@ impl Transaction {
         // 1. Convert `txid` into an owned `String`.
         // 2. Move `inputs` and `outputs` into the transaction.
         // 3. Return a `Transaction`.
-        todo!()
+        Self {
+            txid: txid.to_string(),
+            inputs,
+            outputs,
+        }
     }
 
     /// Return true for the simplified coinbase rule used in this assignment.
@@ -177,7 +193,7 @@ impl Transaction {
         // 1. Check that `self.txid == "coinbase"`.
         // 2. Check that `self.inputs` is empty.
         // 3. Return true only when both checks pass.
-        todo!()
+        self.txid == "coinbase" && self.inputs.is_empty()
     }
 
     /// Sum the satoshi value of every output in this transaction.
@@ -186,7 +202,7 @@ impl Transaction {
         // 1. Start a total at 0.
         // 2. Add every output's `value_sats`.
         // 3. Return the total.
-        todo!()
+        self.outputs.iter().map(|output| output.value_sats).sum()
     }
 
     /// Count outputs whose status is `TxStatus::Unspent`.
@@ -195,7 +211,10 @@ impl Transaction {
         // 1. Walk through `self.outputs`.
         // 2. Count outputs whose status is `TxStatus::Unspent`.
         // 3. Return the count.
-        todo!()
+        self.outputs
+            .iter()
+            .filter(|output| output.is_unspent())
+            .count()
     }
 
     /// Count outputs whose status is `TxStatus::Spent`.
@@ -204,7 +223,10 @@ impl Transaction {
         // 1. Walk through `self.outputs`.
         // 2. Count outputs whose status is `TxStatus::Spent`.
         // 3. Return the count.
-        todo!()
+        self.outputs
+            .iter()
+            .filter(|output| output.status == TxStatus::Spent)
+            .count()
     }
 }
 
@@ -222,7 +244,22 @@ impl Hashable for Transaction {
         // 3. Append `|outputs:`.
         // 4. Append each output as `<value_sats>:<recipient>:<status>;`.
         // 5. Return the final string.
-        todo!()
+        let mut material = format!("tx:{}|inputs:", self.txid);
+        for input in &self.inputs {
+            material.push_str(&format!("{}:{};", input.previous_txid, input.previous_vout));
+        }
+        material.push_str("|outputs:");
+        for output in &self.outputs {
+            let status_str = match output.status {
+                TxStatus::Spent => "spent",
+                TxStatus::Unspent => "unspent",
+            };
+            material.push_str(&format!(
+                "{}:{}:{};",
+                output.value_sats, output.recipient, status_str
+            ));
+        }
+        material
     }
 }
 
@@ -236,7 +273,19 @@ impl Validate for Transaction {
         // 3. If there are no outputs, return `Err(BtcLibError::MissingOutputs)`.
         // 4. Validate every output and return the first output error.
         // 5. Otherwise return `Ok(())`.
-        todo!()
+        if self.txid.is_empty() {
+            return Err(BtcLibError::EmptyTxId);
+        }
+        if !self.is_coinbase() && self.inputs.is_empty() {
+            return Err(BtcLibError::MissingInputs);
+        }
+        if self.outputs.is_empty() {
+            return Err(BtcLibError::MissingOutputs);
+        }
+        for output in &self.outputs {
+            output.validate()?;
+        }
+        Ok(())
     }
 }
 
@@ -253,7 +302,13 @@ impl BlockHeader {
         // 1. Convert the three string fields into owned `String`s.
         // 2. Store `timestamp` and `nonce` unchanged.
         // 3. Return a `BlockHeader`.
-        todo!()
+        Self {
+            block_hash: block_hash.to_string(),
+            previous_block_hash: previous_block_hash.to_string(),
+            merkle_root: merkle_root.to_string(),
+            timestamp,
+            nonce,
+        }
     }
 }
 
@@ -269,14 +324,19 @@ impl Block {
         // 1. Move `header` and `transactions` into the block.
         // 2. Store `height` and `network` unchanged.
         // 3. Return a `Block`.
-        todo!()
+        Self {
+            header,
+            transactions,
+            height,
+            network,
+        }
     }
 
     /// Return how many transactions are in this block.
     pub fn transaction_count(&self) -> usize {
         // Steps:
         // 1. Return `self.transactions.len()`.
-        todo!()
+        self.transactions.len()
     }
 
     /// Sum the total output value of every transaction in the block.
@@ -285,7 +345,10 @@ impl Block {
         // 1. Start a total at 0.
         // 2. Add `transaction.total_output_value()` for each transaction.
         // 3. Return the total.
-        todo!()
+        self.transactions
+            .iter()
+            .map(|tx| tx.total_output_value())
+            .sum()
     }
 
     /// Return the first transaction with the matching txid, if one exists.
@@ -294,7 +357,7 @@ impl Block {
         // 1. Walk through transactions in order.
         // 2. Return `Some(transaction)` for the first exact txid match.
         // 3. Return `None` when no match exists.
-        todo!()
+        self.transactions.iter().find(|tx| tx.txid == txid)
     }
 }
 
@@ -308,7 +371,14 @@ impl Hashable for Block {
         // 1. Start with block hash, previous hash, and height in the format above.
         // 2. Append each transaction id followed by `;`.
         // 3. Return the final string.
-        todo!()
+        let txids: String = self.transactions.iter().map(|tx| format!("{};" , tx.txid)).collect();
+        format!(
+            "block:{}|prev:{}|height:{}|txs:{}",
+            self.header.block_hash,
+            self.header.previous_block_hash,
+            self.height,
+            txids
+        )
     }
 }
 
@@ -320,7 +390,17 @@ impl Validate for Block {
         // 2. Check for duplicate transaction ids. Return `DuplicateTxId` on repeat.
         // 3. Validate every transaction and return the first validation error.
         // 4. Otherwise return `Ok(())`.
-        todo!()
+        if self.transactions.is_empty() {
+            return Err(BtcLibError::EmptyBlock);
+        }
+        let mut seen_txids = std::collections::HashSet::new();
+        for tx in &self.transactions {
+            if !seen_txids.insert(&tx.txid) {
+                return Err(BtcLibError::DuplicateTxId);
+            }
+            tx.validate()?;
+        }
+        Ok(())
     }
 }
 
@@ -334,7 +414,12 @@ pub fn parse_status(input: &str) -> Result<TxStatus, BtcLibError> {
     // 3. Return `Ok(TxStatus::Spent)` for "spent".
     // 4. Return `Ok(TxStatus::Unspent)` for "unspent".
     // 5. Return `Err(BtcLibError::MalformedData)` for anything else.
-    todo!()
+    let trimmed = input.trim().to_lowercase();
+    match trimmed.as_str() {
+        "spent" => Ok(TxStatus::Spent),
+        "unspent" => Ok(TxStatus::Unspent),
+        _ => Err(BtcLibError::MalformedData),
+    }
 }
 
 /// Parse a previous output reference.
@@ -347,7 +432,17 @@ pub fn parse_outpoint(input: &str) -> Result<Option<TxInput>, BtcLibError> {
     // 3. Otherwise split once on `:`.
     // 4. Reject missing txid, missing vout, or non-numeric vout.
     // 5. Return `Ok(Some(TxInput::new(previous_txid, vout)))`.
-    todo!()
+    let trimmed = input.trim();
+    if trimmed == COINBASE_PREVIOUS_OUTPUT {
+        return Ok(None);
+    }
+    let parts: Vec<&str> = trimmed.split(':').collect();
+    if parts.len() != 2 {
+        return Err(BtcLibError::MalformedData);
+    }
+    let previous_txid = parts[0];
+    let vout: u32 = parts[1].parse().map_err(|_| BtcLibError::MalformedData)?;
+    Ok(Some(TxInput::new(&previous_txid.to_string(), vout)))
 }
 
 /// Parse a row into the Week 3 transaction model.
@@ -365,7 +460,42 @@ pub fn parse_transaction(input: &str) -> Result<Transaction, BtcLibError> {
     // 7. Parse status with `parse_status`.
     // 8. Build one output and a transaction with zero or one input.
     // 9. Do not use `unwrap()` or `expect()` in this parser.
-    todo!()
+    let fields: Vec<&str> = input.split(',').collect();
+    if fields.len() != 5 {
+        return Err(BtcLibError::MalformedData);
+    }
+    let trimed = fields
+        .iter()
+        .map(|field| field.trim())
+        .collect::<Vec<&str>>();
+
+    if trimed.iter().any(|field| field.is_empty()) {
+        return Err(BtcLibError::MalformedData);
+    }
+
+    let txid = trimed[0];
+    let outpoint = parse_outpoint(trimed[1])?;
+    let recipient = trimed[2];
+    let amount: u64 = trimed[3].parse().map_err(|_| BtcLibError::MalformedData)?;
+
+    if amount == 0 {
+        return Err(BtcLibError::MalformedData);
+    }
+
+    let status = parse_status(trimed[4])?;
+
+    if outpoint.is_none() && txid != "coinbase" {
+        return Err(BtcLibError::MalformedData);
+    }
+    let output = TxOutput::new(amount, recipient, status);
+
+    let transaction = if let Some(input) = outpoint {
+        Transaction::new(txid, vec![input], vec![output])
+    } else {
+        Transaction::new(txid, vec![], vec![output])
+    };
+
+    Ok(transaction)
 }
 
 /// Parse every row into a transaction.
@@ -378,7 +508,12 @@ pub fn parse_transactions(lines: &[&str]) -> Result<Vec<Transaction>, BtcLibErro
     // 3. Push valid transactions into the vector.
     // 4. If a row returns an error, return that error immediately.
     // 5. Return `Ok(vec)` when all rows parse successfully.
-    todo!()
+    let mut transactions = Vec::new();
+    for line in lines {
+        let transaction = parse_transaction(line)?;
+        transactions.push(transaction);
+    }
+    Ok(transactions)
 }
 
 /// Parse all valid rows and skip malformed rows.
@@ -388,7 +523,13 @@ pub fn valid_transactions_only(lines: &[&str]) -> Vec<Transaction> {
     // 2. Try to parse every row.
     // 3. Push only successfully parsed transactions.
     // 4. Silently skip malformed rows.
-    todo!()
+    let mut transactions = Vec::new();
+    for line in lines {
+        if let Ok(transaction) = parse_transaction(line) {
+            transactions.push(transaction);
+        }
+    }
+    transactions
 }
 
 /// Build and validate a block from parsed transaction rows.
@@ -403,7 +544,10 @@ pub fn build_block_from_rows(
     // 2. Build a `Block` from the parsed transactions.
     // 3. Validate the block.
     // 4. Return the block only when parsing and validation succeed.
-    todo!()
+    let transactions = parse_transactions(rows)?;
+    let block = Block::new(header, transactions, height, network);
+    block.validate()?;
+    Ok(block)
 }
 
 /// Validate every item in order.
@@ -415,7 +559,10 @@ pub fn validate_all<T: Validate>(items: &[T]) -> Result<(), BtcLibError> {
     // 2. Call `validate()` on each item.
     // 3. Return the first error immediately.
     // 4. Return `Ok(())` if every item is valid.
-    todo!()
+    for item in items {
+        item.validate()?;
+    }
+    Ok(())
 }
 
 /// Return the SHA-256 hex hash for every hashable item, preserving input order.
@@ -425,7 +572,9 @@ pub fn hash_all<T: Hashable>(items: &[T]) -> Vec<String> {
     // 2. For each item, call `hash_hex()`.
     // 3. Push the hash into the output vector.
     // 4. Preserve the original order.
-    todo!()
+    items.iter().map(|item| item.hash_hex()).collect()
+
+
 }
 
 /// Decode a 64-character SHA-256 hex string into 32 bytes.
@@ -436,7 +585,14 @@ pub fn decode_hash_hex(input: &str) -> Result<[u8; 32], BtcLibError> {
     // 3. Reject invalid hex or decoded values that are not exactly 32 bytes.
     // 4. Convert the decoded bytes into `[u8; 32]`.
     // 5. Return `Err(BtcLibError::InvalidHash)` for invalid input.
-    todo!()
+    let trimed = input.trim();
+    let decoded = hex::decode(trimed).map_err(|_| BtcLibError::InvalidHash)?;
+    if decoded.len() != 32 {
+        return Err(BtcLibError::InvalidHash);
+    }
+    let mut result = [0u8; 32];
+    result.copy_from_slice(&decoded);
+    Ok(result)
 }
 
 /// Sum unspent output amounts across all transactions.
@@ -445,7 +601,12 @@ pub fn total_unspent(transactions: &[Transaction]) -> u64 {
     // 1. Walk through every transaction and every output.
     // 2. Add `value_sats` only when the output is unspent.
     // 3. Return the total.
-    todo!()
+    transactions
+        .iter()
+        .flat_map(|tx| tx.outputs.iter())
+        .filter(|output| output.is_unspent())
+        .map(|output| output.value_sats)
+        .sum()
 }
 
 /// Return a borrowed transaction with the matching txid, if one exists.
@@ -455,7 +616,7 @@ pub fn find_by_txid<'a>(transactions: &'a [Transaction], txid: &str) -> Option<&
     // 2. Compare each transaction's txid with `txid`.
     // 3. Return `Some(transaction)` for the first exact match.
     // 4. Return `None` if no match exists.
-    todo!()
+    transactions.iter().find(|tx| tx.txid == txid)
 }
 
 /// Return the matching transaction or `BtcLibError::MissingTransaction`.
@@ -467,7 +628,7 @@ pub fn require_transaction<'a>(
     // 1. Reuse `find_by_txid` or perform the same lookup.
     // 2. Return `Ok(transaction)` when found.
     // 3. Return `Err(BtcLibError::MissingTransaction)` when missing.
-    todo!()
+    find_by_txid(transactions, txid).ok_or(BtcLibError::MissingTransaction)
 }
 
 /// Build an amount summary from all transaction outputs.
@@ -478,5 +639,17 @@ pub fn summarize_amounts(transactions: &[Transaction]) -> AmountSummary {
     // 3. Sum spent output amounts into `spent_sats`.
     // 4. Sum unspent output amounts into `unspent_sats`.
     // 5. Return an `AmountSummary` with all four fields filled.
-    todo!()
+    let mut summary = AmountSummary::default();
+    for tx in transactions {
+        for output in &tx.outputs {
+            summary.output_count += 1;
+            summary.total_sats += output.value_sats;
+            if output.is_unspent() {
+                summary.unspent_sats += output.value_sats;
+            } else {
+                summary.spent_sats += output.value_sats;
+            }
+        }
+    }
+    summary
 }
