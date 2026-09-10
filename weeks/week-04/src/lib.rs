@@ -442,7 +442,7 @@ pub fn parse_outpoint(input: &str) -> Result<Option<TxInput>, BtcLibError> {
     }
     let previous_txid = parts[0];
     let vout: u32 = parts[1].parse().map_err(|_| BtcLibError::MalformedData)?;
-    Ok(Some(TxInput::new(&previous_txid.to_string(), vout)))
+    Ok(Some(TxInput::new(previous_txid, vout)))
 }
 
 /// Parse a row into the Week 3 transaction model.
