@@ -371,13 +371,14 @@ impl Hashable for Block {
         // 1. Start with block hash, previous hash, and height in the format above.
         // 2. Append each transaction id followed by `;`.
         // 3. Return the final string.
-        let txids: String = self.transactions.iter().map(|tx| format!("{};" , tx.txid)).collect();
+        let txids: String = self
+            .transactions
+            .iter()
+            .map(|tx| format!("{};", tx.txid))
+            .collect();
         format!(
             "block:{}|prev:{}|height:{}|txs:{}",
-            self.header.block_hash,
-            self.header.previous_block_hash,
-            self.height,
-            txids
+            self.header.block_hash, self.header.previous_block_hash, self.height, txids
         )
     }
 }
@@ -573,8 +574,6 @@ pub fn hash_all<T: Hashable>(items: &[T]) -> Vec<String> {
     // 3. Push the hash into the output vector.
     // 4. Preserve the original order.
     items.iter().map(|item| item.hash_hex()).collect()
-
-
 }
 
 /// Decode a 64-character SHA-256 hex string into 32 bytes.
