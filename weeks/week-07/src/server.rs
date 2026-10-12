@@ -13,7 +13,9 @@ pub async fn handle_line(
     // 1. Parse the line with `parse_request`.
     // 2. Send the request with `send_request`.
     // 3. Encode the response with `encode_response`.
-    todo!()
+    let request = parse_request(line)?;
+    let response = send_request(sender, request).await?;
+    Ok(encode_response(&response))
 }
 
 /// Handle one TCP connection line-by-line.
@@ -27,7 +29,19 @@ pub async fn handle_connection(
     // 3. For each request, call `handle_line`.
     // 4. Write the encoded response back to the socket.
     // 5. For parse errors, write an encoded `NodeResponse::Error`.
-    todo!()
+    let (reader, mut writer) = stream.into_split();
+    let mut lines = BufReader::new(reader).lines();
+    while let Some(line) = lines.next_line().await? {
+        let response = match handle_line(&sender, &line).await {
+            Ok(response) => response,
+            Err(NodeError::MalformedMessage) | Err(NodeError::UnknownCommand) => {
+                encode_response(&NodeResponse::Error("malformed request".to_string()))
+            }
+            Err(error) => return Err(error),
+        };
+        writer.write_all(response.as_bytes()).await?;
+    }
+    Ok(())
 }
 
 /// Run a TCP server until the shutdown signal is received.
@@ -42,5 +56,15 @@ pub async fn run_tcp_server(
     // 3. Spawn `handle_connection` for each connection.
     // 4. Break the loop when `shutdown` resolves.
     // 5. Return `Ok(())` after graceful shutdown.
-    todo!()
+    loop {
+        tokio::select! {
+            result = listener.accept() => {
+                let (stream, _) = result?;
+                let sender = sender.clone();
+                tokio::spawn(async move { let _ = handle_connection(stream, sender).await; });
+            }
+            _ = &mut shutdown => break,
+        }
+    }
+    Ok(())
 }
