@@ -24,14 +24,25 @@ impl Hashable for Transaction {
         // 3. Append `|outputs:`.
         // 4. Append every output as `<value_sats>:<recipient>:<status>;`.
         // 5. Return the final string.
-        let inputs: String = self.inputs.iter()
-            .map(|i| format!("{}:{};" , i.previous_txid, i.previous_vout))
+        let inputs: String = self
+            .inputs
+            .iter()
+            .map(|i| format!("{}:{};", i.previous_txid, i.previous_vout))
             .collect();
-        let outputs: String = self.outputs.iter()
-            .map(|o| format!("{}:{}:{};" , o.value_sats, o.recipient, match o.status {
-                TxStatus::Spent => "spent",
-                TxStatus::Unspent => "unspent",
-            }))
+        let outputs: String = self
+            .outputs
+            .iter()
+            .map(|o| {
+                format!(
+                    "{}:{}:{};",
+                    o.value_sats,
+                    o.recipient,
+                    match o.status {
+                        TxStatus::Spent => "spent",
+                        TxStatus::Unspent => "unspent",
+                    }
+                )
+            })
             .collect();
         format!("tx:{}|inputs:{}|outputs:{}", self.txid, inputs, outputs)
     }

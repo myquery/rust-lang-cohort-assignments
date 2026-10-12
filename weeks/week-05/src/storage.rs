@@ -40,7 +40,6 @@ pub fn save_chain_to_file<P: AsRef<Path>>(chain: &Blockchain, path: P) -> Result
     let json = serde_json::to_string_pretty(chain)?;
     fs::write(path, json)?;
     Ok(())
-    
 }
 
 /// Load a full blockchain snapshot from JSON and validate it.
