@@ -134,15 +134,13 @@ pub fn mine_range(
         return Err(MinerError::InvalidDifficulty);
     }
     hash_meets_difficulty("", difficulty_prefix)?;
-    let mut attempts = 0;
     for nonce in start_nonce..=end_nonce {
         let hash = hash_candidate(candidate, nonce)?;
-        attempts += 1;
         if hash_meets_difficulty(&hash, difficulty_prefix)? {
             return Ok(Some(MinedNonce {
                 nonce,
                 hash,
-                attempts,
+                attempts: (nonce - start_nonce).saturating_add(1),
                 worker_id,
             }));
         }
